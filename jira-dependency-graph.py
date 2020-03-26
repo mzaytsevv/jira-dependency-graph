@@ -9,6 +9,8 @@ import textwrap
 
 import requests
 from functools import reduce
+from graphviz import Source
+
 
 GOOGLE_CHART_URL = 'https://chart.apis.google.com/chart'
 MAX_SUMMARY_LENGTH = 30
@@ -113,6 +115,10 @@ def build_graph_data(start_issue_key, jira, excludes, show_directions, direction
             return
 
         link_type = link['type'][direction]
+ 
+        #Processing only depends on as precondition
+        if not link_type == "depends on": 
+            return
 
         if ignore_closed:
             if ('inwardIssue' in link) and (link['inwardIssue']['fields']['status']['name'] in 'Closed'):
@@ -210,15 +216,20 @@ def create_graph_image(graph_data, image_file, node_shape):
     """
     digraph = 'digraph{node [shape=' + node_shape +'];%s}' % ';'.join(graph_data)
 
-    response = requests.post(GOOGLE_CHART_URL, data = {'cht':'gv', 'chl': digraph})
+    # response = requests.post(GOOGLE_CHART_URL, data = {'cht':'gv', 'chl': digraph})
 
-    with open(image_file, 'w+b') as image:
-        print('Writing to ' + image_file)
-        binary_format = bytearray(response.content)
-        image.write(binary_format)
-        image.close()
+    # with open(image_file, 'w+b') as image:
+    #     print('Writing to ' + image_file)
+    #     binary_format = bytearray(response.content)
+    #     image.write(binary_format)
+    #     image.close()
 
-    return image_file
+
+    src = Source(digraph)
+
+    src.render(image_file, view=True)
+
+    return image_file    
 
 
 def print_graph(graph_data, node_shape):
